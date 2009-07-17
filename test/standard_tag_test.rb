@@ -93,6 +93,25 @@ HERE
     assert_template_result(' true  false  false ','{%for item in array%} {{forloop.first}} {%endfor%}',assigns)
     assert_template_result(' false  false  true ','{%for item in array%} {{forloop.last}} {%endfor%}',assigns)
   end
+  
+  class ForExtension < For
+    def slice_collection_using_each(context, collection_name, from, to, attributes)
+      context[@collection_name].inject([]) do |list, item|
+        list << item if item != attributes['exclude'].to_i
+        list
+      end
+    end
+  end
+  
+  def test_for_with_custom_extension
+    begin
+      Template.register_tag('for', ForExtension)
+      assigns = {'list' => [1,2,3,4,5] }
+      assert_template_result('1245', '{% for item in list exclude:3 %}{{item}}{% endfor %}', assigns)
+    ensure
+      Template.register_tag('for', For)
+    end
+  end
 
   def test_for_and_if
     assigns = {'array' => [1,2,3] }
